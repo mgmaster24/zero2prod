@@ -38,10 +38,10 @@ services:
       - key: APP_DATABASE__PASSWORD
         scope: RUN_TIME
         value: ${newsletter.PASSWORD}
-      - key: APP_DATABASE__HOST
+      - key: APP_DATABASE__CONNECTION__HOST
         scope: RUN_TIME
         value: ${newsletter.HOSTNAME}
-      - key: APP_DATABASE__PORT
+      - key: APP_DATABASE__CONNECTION__PORT
         scope: RUN_TIME
         value: ${newsletter.PORT}
       - key: APP_DATABASE__DATABASE_NAME
