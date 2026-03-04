@@ -137,7 +137,7 @@ async fn configure_db(config: &DatabaseSettings) -> PgPool {
         .await
         .expect("Failed to create database");
 
-    let pool = PgPool::connect_with(config.without_db())
+    let pool = PgPool::connect_with(config.with_db())
         .await
         .expect("Failed to connect to Postgres");
     sqlx::migrate!("./migrations")

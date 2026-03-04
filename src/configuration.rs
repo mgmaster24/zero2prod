@@ -16,8 +16,8 @@ pub struct DatabaseSettings {
     pub username: String,
     pub password: SecretString,
     pub database_name: String,
-    pub connection: ConnectionSettings,
     pub require_ssl: bool,
+    pub connection: ConnectionSettings,
 }
 
 #[derive(serde::Deserialize)]
