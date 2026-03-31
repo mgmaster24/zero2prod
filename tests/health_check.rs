@@ -5,6 +5,7 @@ use std::net::TcpListener;
 use uuid::Uuid;
 use zero2prod::{
     configuration::{get_config, DatabaseSettings},
+    email_client::EmailClient,
     telemetry::{get_subscriber, init_subscriber},
 };
 
@@ -111,6 +112,33 @@ async fn subscribe_returns_a_400_when_data_is_missing() {
     }
 }
 
+#[tokio::test]
+async fn subscribe_returns_a_400_when_fields_are_present_but_empty() {
+    let app = spawn_app().await;
+    let client = reqwest::Client::new();
+    let test_cases = vec![
+        ("name=&email=ursula_le_guin@gmail.com", "empty name"),
+        ("name=Ursula&email=", "empty email"),
+        ("name=Ursula&email=definitely-not-an-email", "invalid email"),
+    ];
+
+    for (body, description) in test_cases {
+        let response = client
+            .post(format!("{}/subscriptions", &app.address))
+            .header("Content-Type", "application/x-www-form-urlencoded")
+            .body(body)
+            .send()
+            .await
+            .expect("Failed to execute request");
+
+        assert_eq!(
+            400,
+            response.status().as_u16(),
+            "The API did not return a 200 OK when the payload was {}.",
+            description
+        );
+    }
+}
 async fn spawn_app() -> TestApp {
     Lazy::force(&TRACING);
     let listener = TcpListener::bind("127.0.0.1:0").expect("Failed to bind random port");
@@ -119,7 +147,13 @@ async fn spawn_app() -> TestApp {
     let mut config = get_config().expect("Failed to read configuration");
     config.database.database_name = Uuid::new_v4().to_string();
     let pool = configure_db(&config.database).await;
-    let server = run(listener, pool.clone()).expect("Failed to bind address");
+    let sender_email = config.email_client.sender().expect("Invalid sneder email");
+    let email_client = EmailClient::new(
+        config.email_client.base_url,
+        sender_email,
+        config.email_client.auth_token,
+    );
+    let server = run(listener, pool.clone(), email_client).expect("Failed to bind address");
     tokio::spawn(server);
     TestApp {
         address,

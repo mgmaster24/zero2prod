@@ -2,6 +2,7 @@ use sqlx::PgPool;
 use std::net::TcpListener;
 use zero2prod::{
     configuration::get_config,
+    email_client::EmailClient,
     startup,
     telemetry::{get_subscriber, init_subscriber},
 };
@@ -12,11 +13,20 @@ async fn main() -> Result<(), std::io::Error> {
     init_subscriber(subscriber);
     let configuration = get_config().expect("Failed to read configuration");
     let connection_pool = PgPool::connect_lazy_with(configuration.database.with_db());
+    let sender = configuration
+        .email_client
+        .sender()
+        .expect("Invalid sender email");
+    let email_client = EmailClient::new(
+        configuration.email_client.base_url,
+        sender,
+        configuration.email_client.auth_token,
+    );
     let address = format!(
         "{}:{}",
         configuration.application.host, configuration.application.port
     );
     let listener = TcpListener::bind(address).expect("Failed to bind random port");
-    startup::run(listener, connection_pool)?.await?;
+    startup::run(listener, connection_pool, email_client)?.await?;
     Ok(())
 }

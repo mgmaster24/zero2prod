@@ -8,3 +8,7 @@ database:
   username: "postgres"
   password: "password"
   database_name: "newsletter"
+email_client:
+  base_url: "http://localhost"
+  sender_email: "mmasterson@msquaredsolutions.com"
+  auth_token: "my-secret-token"
